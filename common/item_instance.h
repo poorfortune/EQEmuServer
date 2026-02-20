@@ -21,21 +21,23 @@
 // These classes could be optimized with database reads/writes by storing
 // a status flag indicating how object needs to interact with database
 
-#pragma once
+#ifndef COMMON_ITEM_INSTANCE_H
+#define COMMON_ITEM_INSTANCE_H
+#include "evolving_items.h"
 
-#include "common/bodytypes.h"
-#include "common/deity.h"
-#include "common/eq_constants.h"
-#include "common/evolving_items.h"
-#include "common/item_data.h"
-#include "common/memory_buffer.h"
-#include "common/repositories/character_evolving_items_repository.h"
-#include "common/timer.h"
-
-#include <map>
 
 class ItemParse;			// Parses item packets
 class EvolveInfo;			// Stores information about an evolving item family
+
+#include "../common/eq_constants.h"
+#include "../common/item_data.h"
+#include "../common/timer.h"
+#include "../common/bodytypes.h"
+#include "../common/deity.h"
+#include "../common/memory_buffer.h"
+#include "../common/repositories/character_evolving_items_repository.h"
+
+#include <map>
 
 
 // Specifies usage type for item inside EQ::ItemInstance
@@ -150,6 +152,12 @@ namespace EQ
 		// Has attack/delay?
 		bool IsWeapon() const;
 		bool IsAmmo() const;
+
+		const int  GetItemTier() const;
+		const int  GetBaseID() const;
+		const int  GetOriginalID() const;
+		ItemInstance* GetUpgrade(SharedDatabase &database);
+		ItemInstance* GetMaxUpgrade(SharedDatabase &database);
 
 		// Accessors
 		const uint32 GetID() const { return ((m_item) ? m_item->ID : 0); }
@@ -301,6 +309,7 @@ namespace EQ
 		int GetItemSpellDamage(bool augments = false) const;
 		int GetItemClairvoyance(bool augments = false) const;
 		int GetItemSkillsStat(EQ::skills::SkillType skill, bool augments = false) const;
+		int GetItemSlots(bool augments = false) const;
 		uint32 GetItemGuildFavor() const;
 		std::vector<uint32> GetAugmentIDs() const;
 		std::vector<std::string> GetAugmentNames() const;
@@ -374,3 +383,4 @@ namespace EQ
 		mutable std::map<std::string, ::Timer> m_timers {};
 	};
 }
+#endif /*COMMON_ITEM_INSTANCE_H*/

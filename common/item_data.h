@@ -17,9 +17,9 @@
 	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  04111-1307  USA
 */
 
-#pragma once
+#ifndef COMMON_ITEM_DATA_H
+#define COMMON_ITEM_DATA_H
 
-#include "common/emu_constants.h"
 
 /*
  * Note: (Doodman)
@@ -43,6 +43,9 @@
  * Note #4: (Doodman)
  *	Made ya look! Ha!
  */
+
+#include "emu_constants.h"
+
 
 namespace EQ
 {
@@ -358,6 +361,8 @@ namespace EQ
 		uint8	MinStatus {};
 		char	Comment[255] {};
 
+		uint32  OriginalID {};
+
 		// Packet based fields
 		uint8	ItemClass {};		// Item Type: 0=common, 1=container, 2=book
 		char	Name[64] {};		// Name
@@ -555,3 +560,5 @@ namespace EQ
 	};
 
 } /*EQEmu*/
+
+#endif /*COMMON_ITEM_DATA_H*/

@@ -17,14 +17,21 @@
 */
 
 #include "inventory_profile.h"
+#include "../common/data_verification.h"
+//#include "classes.h"
+//#include "global_define.h"
+//#include "item_instance.h"
+//#include "races.h"
+#include "rulesys.h"
+#include "shareddb.h"
+#include "strings.h"
+#include "evolving_items.h"
 
-#include "common/data_verification.h"
-#include "common/evolving_items.h"
-#include "common/rulesys.h"
-#include "common/shareddb.h"
-#include "common/strings.h"
+//#include "../common/light_source.h"
 
-#include <climits>
+#include <limits.h>
+
+//#include <iostream>
 
 int32 next_item_serial_number = 1;
 std::unordered_set<uint64> guids{};
@@ -798,6 +805,63 @@ const EQ::ItemData* EQ::ItemInstance::GetItem() const
 		return m_scaledItem;
 
 	return m_item;
+}
+
+// Returns the original ID of a dynamic item
+const int EQ::ItemInstance::GetOriginalID() const
+{
+	if (!m_item)
+		return 0;
+
+	return m_item->OriginalID;
+}
+
+// Returns the base ID of an item.
+const int EQ::ItemInstance::GetBaseID() const
+{
+	if (!m_item)
+		return 0;
+
+	return GetOriginalID() % 1000000;
+}
+
+
+const int EQ::ItemInstance::GetItemTier() const
+{
+	if (!m_item)
+		return 0;
+
+	return static_cast<int64>(m_item->ID / 1000000);
+}
+
+EQ::ItemInstance* EQ::ItemInstance::GetUpgrade(SharedDatabase &database) {
+	auto new_item = database.CreateItem(GetOriginalID() + 1000000);
+
+	if (new_item) {
+		return new_item;
+	} else {
+		return nullptr;
+	}
+}
+
+EQ::ItemInstance* EQ::ItemInstance::GetMaxUpgrade(SharedDatabase &database) {
+    EQ::ItemInstance* current_item = this;
+    EQ::ItemInstance* next_item = nullptr;
+
+    while (true) {
+        next_item = current_item->GetUpgrade(database);
+
+        if (next_item) {
+            if (current_item != this) {
+                safe_delete(current_item);
+            }
+            current_item = next_item;
+        } else {
+            return (current_item == this) ? nullptr : current_item;
+        }
+    }
+
+    return nullptr;
 }
 
 const EQ::ItemData* EQ::ItemInstance::GetUnscaledItem() const
@@ -1932,6 +1996,35 @@ int EQ::ItemInstance::GetItemSkillsStat(EQ::skills::SkillType skill, bool augmen
 		}
 	}
 	return stat;
+}
+
+int EQ::ItemInstance::GetItemSlots(bool augments) const
+{
+    if (!m_item || !m_item->Slots) {
+        return 0;
+    }
+
+    int slots;
+
+    if (augments) {
+        int aggregate_slots = m_item->Slots;
+
+        for (int i = invaug::SOCKET_BEGIN; i <= invaug::SOCKET_END; ++i) {
+            const ItemInstance* augment = GetAugment(i);
+            if (augment && augment->GetItem()) {
+                aggregate_slots &= augment->GetItem()->Slots;
+            }
+        }
+        slots = aggregate_slots;
+    } else {
+        slots = m_item->Slots;
+    }
+
+    if (!RuleB(Custom, PowerSourceItemUpgrade)) {
+        slots &= ~(1 << 21);
+    }
+
+    return slots;
 }
 
 void EQ::ItemInstance::AddGUIDToMap(uint64 existing_serial_number)

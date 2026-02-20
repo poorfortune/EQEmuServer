@@ -1178,6 +1178,19 @@ RULE_INT(EvolvingItems, DelayUponEquipping, 30000, "Delay in ms before an evolvi
 RULE_BOOL(EvolvingItems, DestroyAugmentsOnEvolve, false, "If this is enabled, any augments in an item will be destroyed when the item evolves. Otherwise, send augments to the player via the parcel system (requires that the Parcel System be enabled).")
 RULE_CATEGORY_END()
 
+RULE_CATEGORY(Custom)
+
+// Item Upgrades
+RULE_BOOL(Custom, 	DoItemUpgrades, 						true, "Retribution item upgrades")
+RULE_REAL(Custom, 	Tier2ItemDropRate, 						25, "Percentage chance that a drop will be upgraded to Tier 2. These percentages are independent of one another, but Tier2 is rolled first. Default value is twice as rare as Tier2.")
+RULE_REAL(Custom, 	Tier1ItemDropRate, 						50, "Percentage chance that a drop will be upgraded to Tier 1. These percentages are independent of one another, but Tier2 is rolled first. Default value is twice as rare as Unmodified")
+RULE_BOOL(Custom, 	PowerSourceItemUpgrade, 		 		false, "Enable to add Power Source to all items which can be equipped by some race and class.")
+RULE_REAL(Custom, 	PowerSourceItemUpgradeRateScale, 		1.0, "Scale XP rate of items using this value.")
+RULE_REAL(Custom, 	PowerSourceItemTier1RateFloor,			1.0, "Smallest percentage item XP that a white can can award for a tier 1 item")
+RULE_REAL(Custom, 	PowerSourceItemTier2RateFloor,			0.1, "Smallest percentage item XP that a white can can award for a tier 2 item")
+
+RULE_CATEGORY_END()
+
 #undef RULE_CATEGORY
 #undef RULE_INT
 #undef RULE_REAL
