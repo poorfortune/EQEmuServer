@@ -1,15 +1,20 @@
-#include "npc.h"
+#include "../common/global_define.h"
+#include "../common/data_verification.h"
 
-#include "common/data_verification.h"
-#include "common/loot.h"
-#include "common/repositories/criteria/content_filter_criteria.h"
-#include "common/repositories/global_loot_repository.h"
-#include "zone/client.h"
-#include "zone/entity.h"
-#include "zone/global_loot_manager.h"
-#include "zone/mob.h"
-#include "zone/quest_parser_collection.h"
-#include "zone/zonedb.h"
+#include "../common/loot.h"
+#include "client.h"
+#include "entity.h"
+#include "mob.h"
+#include "npc.h"
+#include "zonedb.h"
+#include "global_loot_manager.h"
+#include "../common/repositories/criteria/content_filter_criteria.h"
+#include "../common/repositories/global_loot_repository.h"
+#include "quest_parser_collection.h"
+
+#ifdef _WINDOWS
+#define snprintf	_snprintf
+#endif
 
 void NPC::AddLootTable(uint32 loottable_id, bool is_global)
 {
@@ -263,6 +268,29 @@ bool NPC::MeetsLootDropLevelRequirements(LootdropEntriesRepository::LootdropEntr
 	return true;
 }
 
+uint32 NPC::DoUpgradeLoot(uint32 itemID) {
+	if (RuleB(Custom, DoItemUpgrades)) {
+		zone->random.Reseed();
+		uint32 roll = zone->random.Real(0.0, 100.0);
+		uint32 newID = itemID % 1000000;
+
+		// TODO: Affix system will need to update this
+		uint32 currentTier = itemID / 1000000;
+
+		if (roll <= RuleR(Custom, Tier2ItemDropRate) && currentTier < 2) {
+			newID += 2000000;
+		} else if (roll <= RuleR(Custom, Tier1ItemDropRate) && currentTier < 1) {
+			newID += 1000000;
+		}
+
+		if (database.GetItem(newID) && newID > itemID) {
+			itemID = newID;
+		}
+	}
+
+	return itemID;
+}
+
 //if itemlist is null, just send wear changes
 void NPC::AddLootDrop(
 	const EQ::ItemData *item2,
@@ -279,6 +307,10 @@ void NPC::AddLootDrop(
 	if (m_resumed_from_zone_suspend) {
 		LogZoneState("NPC [{}] is resuming from zone suspend, skipping", GetCleanName());
 		return;
+	}
+
+	if (RuleB(Custom, DoItemUpgrades) && item2->ID <= 1000000 && !IsPet()) {
+		item2 = database.GetItem(DoUpgradeLoot(item2->ID));
 	}
 
 	if (!item2) {
@@ -372,7 +404,7 @@ void NPC::AddLootDrop(
 		if (!item2->NoPet) {
 			for (int i = EQ::invslot::EQUIPMENT_BEGIN; !found && i <= EQ::invslot::EQUIPMENT_END; i++) {
 				const uint32 slots = (1 << i);
-				if (item2->Slots & slots) {
+				if (inst->GetItemSlots(true) & slots) {
 					if (equipment[i]) {
 						compitem = database.GetItem(equipment[i]);
 						if (!compitem) {
